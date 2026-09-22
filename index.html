@@ -17,9 +17,6 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 
-    <!-- Tone.js (Sintesis Suara) -->
-    <script src="https://cdnjs.cloudflare.com/ajax/libs/tone/14.8.49/Tone.js"></script>
-
     <!-- Custom CSS -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; }
@@ -241,61 +238,37 @@
             btnOk: document.getElementById('modal-btn-ok')
         };
 
-        // --- SISTEM SUARA (TONE.JS) ---
-        // Membuat efek suara disintesis tanpa URL eksternal
+        // --- SISTEM SUARA (AUDIO EKSTERNAL DARI GITHUB) ---
+        // GANTI LINK DI BAWAH INI DENGAN LINK RAW GITHUB FILE MP3/WAV ANDA
+        // Contoh format link yang benar: https://raw.githubusercontent.com/Username/Repo/main/namafile.mp3
         
-        // 1. Suara Suspense (Drum roll / Drone menegangkan)
-        const fmOsc = new Tone.FMOscillator({
-            frequency: 45,
-            type: "sine",
-            modulationType: "sawtooth",
-            harmonicity: 0.5,
-            modulationIndex: 5
-        }).toDestination();
-        fmOsc.volume.value = -12; // Volume rendah
+        const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3"; // <--- Masukkan link musik tegang di sini
+        const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3"; // <--- Masukkan link musik perayaan di sini
 
-        // 2. Synth untuk Perayaan (Fanfare)
-        const synth = new Tone.PolySynth(Tone.Synth, {
-            oscillator: { type: "triangle" },
-            envelope: { attack: 0.05, decay: 0.1, sustain: 0.3, release: 1 }
-        }).toDestination();
-        synth.volume.value = -5;
+        // Inisialisasi Audio HTML5
+        const suspenseAudio = new Audio(urlSuspense);
+        suspenseAudio.loop = true; // Musik menegangkan akan diputar berulang (loop)
 
-        const chordProgression = [
-            ["C4", "E4", "G4", "C5"],
-            ["F4", "A4", "C5", "F5"],
-            ["G4", "B4", "D5", "G5"],
-            ["C4", "E4", "G4", "C5"]
-        ];
-
-        let celebrationLoop = new Tone.Loop(time => {
-            const index = Math.floor((Tone.Transport.ticks / Tone.Transport.PPQ) % chordProgression.length);
-            synth.triggerAttackRelease(chordProgression[index], "4n", time);
-        }, "4n");
-        Tone.Transport.bpm.value = 140;
+        const celebrationAudio = new Audio(urlCelebration);
 
         function playSuspenseSound() {
-            Tone.start();
-            fmOsc.start();
+            // Memutar musik suspense
+            suspenseAudio.play().catch(err => {
+                console.warn("Browser memblokir pemutaran otomatis:", err);
+            });
         }
 
         function stopSuspenseSound() {
-            fmOsc.stop();
+            // Menghentikan musik suspense dan mengembalikan ke awal
+            suspenseAudio.pause();
+            suspenseAudio.currentTime = 0;
         }
 
         function playCelebrationSound() {
-            Tone.start();
-            Tone.Transport.start();
-            celebrationLoop.start(0);
-            
-            // Tambahan melodi solo melengking
-            const soloSynth = new Tone.Synth({ oscillator: { type: "square" } }).toDestination();
-            soloSynth.volume.value = -8;
-            const now = Tone.now();
-            soloSynth.triggerAttackRelease("C5", "8n", now);
-            soloSynth.triggerAttackRelease("E5", "8n", now + 0.2);
-            soloSynth.triggerAttackRelease("G5", "8n", now + 0.4);
-            soloSynth.triggerAttackRelease("C6", "2n", now + 0.6);
+            // Memutar musik perayaan
+            celebrationAudio.play().catch(err => {
+                console.warn("Browser memblokir pemutaran otomatis:", err);
+            });
         }
 
         // --- STREAMING_CHUNK:Logika Navigasi dan Login... ---
