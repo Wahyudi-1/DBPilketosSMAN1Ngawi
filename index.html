@@ -164,7 +164,8 @@
                 <h2 class="text-4xl md:text-5xl font-black text-white uppercase tracking-widest text-shadow-lg" id="reveal-title">PENGHITUNGAN SUARA</h2>
             </div>
             
-            <div id="reveal-candidates" class="grid grid-cols-1 md:grid-cols-3 gap-8 px-4 w-full mb-12">
+            <!-- Wrapper dibuat fleksibel agar urutan dan posisinya bisa berubah otomatis -->
+            <div id="reveal-candidates" class="flex flex-col md:flex-row flex-wrap justify-center items-center gap-y-8 gap-x-4 px-4 w-full mb-12 transition-all duration-1000">
                 <!-- Kandidat di render disini -->
             </div>
 
@@ -238,40 +239,29 @@
             btnOk: document.getElementById('modal-btn-ok')
         };
 
-        // --- SISTEM SUARA (AUDIO EKSTERNAL DARI GITHUB) ---
-        // GANTI LINK DI BAWAH INI DENGAN LINK RAW GITHUB FILE MP3/WAV ANDA
-        // Contoh format link yang benar: https://raw.githubusercontent.com/Username/Repo/main/namafile.mp3
-        
-        const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3"; // <--- Masukkan link musik tegang di sini
-        const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3"; // <--- Masukkan link musik perayaan di sini
+        const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3";
+        const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3";
 
-        // Inisialisasi Audio HTML5
         const suspenseAudio = new Audio(urlSuspense);
-        suspenseAudio.loop = true; // Musik menegangkan akan diputar berulang (loop)
+        suspenseAudio.loop = true;
+        suspenseAudio.preload = 'auto'; // Persiapkan file lebih awal
 
         const celebrationAudio = new Audio(urlCelebration);
+        celebrationAudio.preload = 'auto'; // Persiapkan file lebih awal
 
         function playSuspenseSound() {
-            // Memutar musik suspense
-            suspenseAudio.play().catch(err => {
-                console.warn("Browser memblokir pemutaran otomatis:", err);
-            });
+            suspenseAudio.play().catch(err => console.warn("Browser memblokir autoplay audio:", err));
         }
 
         function stopSuspenseSound() {
-            // Menghentikan musik suspense dan mengembalikan ke awal
             suspenseAudio.pause();
             suspenseAudio.currentTime = 0;
         }
 
         function playCelebrationSound() {
-            // Memutar musik perayaan
-            celebrationAudio.play().catch(err => {
-                console.warn("Browser memblokir pemutaran otomatis:", err);
-            });
+            celebrationAudio.play().catch(err => console.warn("Browser memblokir autoplay audio:", err));
         }
 
-        // --- STREAMING_CHUNK:Logika Navigasi dan Login... ---
         function switchView(viewName) {
             Object.values(views).forEach(v => v.classList.remove('active'));
             views[viewName].classList.add('active');
@@ -288,6 +278,11 @@
 
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
+            
+            // PAKSA PRELOAD AUDIO SAAT USER KLIK TOMBOL (Sesuai Aturan Autoplay Browser)
+            suspenseAudio.load();
+            celebrationAudio.load();
+
             const inputId = document.getElementById('input-id').value.trim();
             const btn = document.getElementById('btn-submit-login');
             
@@ -295,7 +290,7 @@
             btn.disabled = true;
 
             try {
-                // Bypass khusus simulasi pengembangan (hapus di production jika perlu)
+                // Bypass khusus simulasi pengembangan (Bisa dihapus di production)
                 if (inputId.toLowerCase() === 'admin') {
                     document.getElementById('admin-badge').classList.remove('hidden');
                     document.getElementById('admin-badge').classList.add('flex');
@@ -325,7 +320,6 @@
             }
         });
 
-        // --- STREAMING_CHUNK:Mengambil dan Menghitung Data dari Server... ---
         async function fetchDashboardData() {
             try {
                 // 1. Ambil semua suara
@@ -358,7 +352,6 @@
             }
         }
 
-        // --- STREAMING_CHUNK:Logika Animasi Panggung Reveal dan Confetti... ---
         document.getElementById('btn-goto-reveal').addEventListener('click', () => {
             switchView('reveal');
             setupRevealStage();
@@ -369,10 +362,15 @@
             container.innerHTML = '';
 
             KANDIDAT.forEach(k => {
-                // Buat Kartu
+                // Elemen Wrapper Fleksibel
+                const wrapper = document.createElement('div');
+                wrapper.id = `wrapper-${k.id}`;
+                wrapper.className = "w-full md:w-[31%] flex justify-center transition-all duration-1000 ease-in-out";
+
+                // Elemen Kartu
                 const card = document.createElement('div');
                 card.id = `candidate-card-${k.id}`;
-                card.className = "bg-slate-800 border-2 border-slate-700 rounded-3xl overflow-hidden shadow-2xl relative transition-all duration-700 flex flex-col";
+                card.className = "w-full max-w-sm bg-slate-800 border-2 border-slate-700 rounded-3xl overflow-hidden shadow-2xl relative transition-all duration-700 flex flex-col";
                 
                 card.innerHTML = `
                     <div class="relative h-72 bg-slate-900 overflow-hidden">
@@ -389,10 +387,12 @@
                         </div>
                     </div>
                 `;
-                container.appendChild(card);
+                
+                wrapper.appendChild(card);
+                container.appendChild(wrapper);
             });
 
-            // Mulai Efek Menegangkan
+            // Mulai Efek Menegangkan & Putar Audio
             isSuspenseActive = true;
             playSuspenseSound();
 
@@ -400,10 +400,9 @@
             rollingInterval = setInterval(() => {
                 KANDIDAT.forEach(k => {
                     const el = document.getElementById(`digit-${k.id}`);
-                    // Buat angka acak berubah cepat
                     el.textContent = Math.floor(Math.random() * (totalVotesCast + 500)).toString().padStart(3, '0');
                 });
-            }, 50); // Kecepatan update 50ms
+            }, 50);
         }
 
         // --- SISTEM CONFETTI (CANVAS) ---
@@ -460,13 +459,14 @@
             canvas.height = window.innerHeight;
         });
 
-        // --- STREAMING_CHUNK:Logika Tombol Eksekusi Pemenang... ---
         document.getElementById('btn-reveal-winner').addEventListener('click', () => {
             if (!isSuspenseActive) return;
             
             // Hentikan Efek Menegangkan
             isSuspenseActive = false;
             clearInterval(rollingInterval);
+            
+            // Ganti Audio ke Perayaan
             stopSuspenseSound();
             playCelebrationSound();
 
@@ -485,35 +485,51 @@
                 }
             });
 
-            // Update UI Tiap Kandidat
+            // Update UI Tiap Kandidat (Dengan Efek Perubahan Layout)
             KANDIDAT.forEach(k => {
+                const wrapper = document.getElementById(`wrapper-${k.id}`);
+                const card = document.getElementById(`candidate-card-${k.id}`);
                 const img = document.getElementById(`img-${k.id}`);
                 const digit = document.getElementById(`digit-${k.id}`);
-                const card = document.getElementById(`candidate-card-${k.id}`);
                 
-                // Set Angka Asli
+                // Set Angka Suara Asli
                 digit.textContent = globalTally[k.id].toString();
                 
-                // Ubah Gambar jadi Berwarna
-                img.classList.remove('grayscale-[100%]', 'opacity-80');
-                img.classList.add('grayscale-0', 'opacity-100');
-
-                // Jika Pemenang, Beri Efek Spesial Emas
+                // Cek Apakah Pemenang
                 if (k.id === winnerId) {
-                    card.classList.remove('bg-slate-800', 'border-slate-700');
-                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow');
-                    card.style.transform = "scale(1.05)";
-                    card.style.zIndex = "10";
+                    // Layout Wrapper Pemenang (Memaksa memakan baris penuh, pindah ke Atas)
+                    wrapper.classList.remove('md:w-[31%]');
+                    wrapper.classList.add('w-full', 'md:w-full', 'order-1', 'z-20', 'mb-8');
+
+                    // Styling Card Pemenang (Membesar)
+                    card.classList.remove('bg-slate-800', 'border-slate-700', 'max-w-sm');
+                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow', 'max-w-lg');
+                    card.style.transform = "scale(1.15) translateY(-10px)";
                     
+                    // Ubah Gambar jadi Berwarna (HANYA PEMENANG)
+                    img.classList.remove('grayscale-[100%]', 'opacity-80');
+                    img.classList.add('grayscale-0', 'opacity-100');
+
+                    // Ubah Warna Teks dan Badge Emas
                     digit.classList.remove('text-white');
                     digit.classList.add('text-yellow-400');
                     
                     const badge = card.querySelector('.id-badge');
                     badge.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
                     badge.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
+                    
                 } else {
-                    // Yang kalah sedikit diredupkan
-                    card.style.opacity = "0.6";
+                    // Jika Kalah (Biarkan Tetap Hitam Putih / Grayscale)
+                    
+                    // Layout Wrapper Kalah (Berbagi tempat di baris kedua, Turun ke Bawah)
+                    wrapper.classList.remove('md:w-[31%]', 'w-full');
+                    wrapper.classList.add('w-1/2', 'md:w-[40%]', 'order-2', 'z-10');
+
+                    // Styling Card Kalah (Mengecil & Transparan)
+                    card.classList.remove('max-w-sm');
+                    card.classList.add('max-w-xs');
+                    card.style.opacity = "0.5";
+                    card.style.transform = "scale(0.9) translateY(20px)";
                 }
             });
 
