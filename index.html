@@ -17,6 +17,9 @@
     <!-- Google Fonts -->
     <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;700;900&display=swap" rel="stylesheet">
 
+    <!-- Chart.js untuk Diagram Pie -->
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+
     <!-- Custom CSS -->
     <style>
         body { font-family: 'Inter', sans-serif; background-color: #0f172a; color: white; }
@@ -39,9 +42,9 @@
             to { opacity: 1; transform: translateY(0); }
         }
         @keyframes pulseGlow {
-            0% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0.7); }
-            70% { box-shadow: 0 0 20px 15px rgba(234, 179, 8, 0); }
-            100% { box-shadow: 0 0 0 0 rgba(234, 179, 8, 0); }
+            0% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0.7); }
+            70% { box-shadow: 0 0 20px 20px rgba(250, 204, 21, 0); }
+            100% { box-shadow: 0 0 0 0 rgba(250, 204, 21, 0); }
         }
 
         /* Filter Grayscale Transisi */
@@ -55,6 +58,11 @@
             font-feature-settings: "tnum";
             letter-spacing: -2px;
         }
+
+        /* Custom Scrollbar untuk Sidebar */
+        .custom-scrollbar::-webkit-scrollbar { width: 6px; }
+        .custom-scrollbar::-webkit-scrollbar-track { background: #1e293b; }
+        .custom-scrollbar::-webkit-scrollbar-thumb { background: #3b82f6; border-radius: 10px; }
 
         /* Confetti Canvas */
         #confetti-canvas {
@@ -132,46 +140,75 @@
 
             <div id="stats-content" class="hidden w-full flex flex-col items-center">
                 <div class="grid grid-cols-1 md:grid-cols-3 gap-6 w-full mb-10">
-                    <!-- Card: Total Suara -->
                     <div class="bg-blue-900/40 border border-blue-500/30 p-6 rounded-2xl text-center shadow-[0_0_30px_rgba(37,99,235,0.1)]">
                         <i class="ph-fill ph-users-three text-4xl text-blue-400 mb-2"></i>
                         <h3 class="text-slate-300 font-semibold mb-1">Total Pemilih Terdaftar</h3>
                         <p class="text-4xl font-black text-white" id="stat-terdaftar">0</p>
                     </div>
-                    <!-- Card: Suara Masuk -->
                     <div class="bg-green-900/40 border border-green-500/30 p-6 rounded-2xl text-center shadow-[0_0_30px_rgba(34,197,94,0.1)]">
                         <i class="ph-fill ph-check-circle text-4xl text-green-400 mb-2"></i>
                         <h3 class="text-slate-300 font-semibold mb-1">Total Suara Masuk</h3>
                         <p class="text-4xl font-black text-white" id="stat-masuk">0</p>
                     </div>
-                    <!-- Card: Suara Tidak Digunakan -->
                     <div class="bg-red-900/40 border border-red-500/30 p-6 rounded-2xl text-center shadow-[0_0_30px_rgba(239,68,68,0.1)]">
                         <i class="ph-fill ph-prohibit text-4xl text-red-400 mb-2"></i>
-                        <h3 class="text-slate-300 font-semibold mb-1">Suara Belum/Tidak Digunakan</h3>
+                        <h3 class="text-slate-300 font-semibold mb-1">Belum Memilih / Sisa</h3>
                         <p class="text-4xl font-black text-white" id="stat-sisa">0</p>
                     </div>
                 </div>
 
                 <button id="btn-goto-reveal" class="px-8 py-5 rounded-2xl font-black text-xl text-white bg-gradient-to-r from-blue-600 to-indigo-600 hover:from-blue-500 hover:to-indigo-500 shadow-[0_0_40px_rgba(79,70,229,0.4)] transform hover:scale-105 transition-all flex items-center justify-center gap-3">
-                    <i class="ph-bold ph-ticket"></i> LIHAT HASIL REKAPITULASI
+                    <i class="ph-bold ph-ticket"></i> LIHAT HASIL REKAPITULASI PUSAT
                 </button>
             </div>
         </section>
 
-        <!-- VIEW: STAGE REVEAL -->
+        <!-- VIEW: STAGE REVEAL PUSAT -->
         <section id="view-reveal" class="view-section flex-col items-center w-full max-w-6xl slide-up">
-            <div class="text-center mb-10">
+            <div class="text-center mb-10 w-full flex flex-col items-center">
                 <h2 class="text-4xl md:text-5xl font-black text-white uppercase tracking-widest text-shadow-lg" id="reveal-title">PENGHITUNGAN SUARA</h2>
             </div>
             
-            <!-- Wrapper dibuat fleksibel agar urutan dan posisinya bisa berubah otomatis -->
-            <div id="reveal-candidates" class="flex flex-col md:flex-row flex-wrap justify-center items-center gap-y-8 gap-x-4 px-4 w-full mb-12 transition-all duration-1000">
+            <div id="reveal-candidates" class="flex flex-col md:flex-row flex-wrap justify-center items-start gap-y-8 gap-x-6 px-4 w-full mb-8 transition-all duration-1000">
                 <!-- Kandidat di render disini -->
             </div>
 
-            <button id="btn-reveal-winner" class="px-10 py-5 rounded-2xl font-black text-xl md:text-2xl text-slate-900 bg-yellow-400 hover:bg-yellow-300 shadow-[0_0_50px_rgba(250,204,21,0.5)] transform hover:scale-110 transition-all flex items-center justify-center gap-3 z-50">
-                <i class="ph-fill ph-trophy"></i> TAMPILKAN KETUA & WAKIL KETUA 2026-2027
-            </button>
+            <div class="flex flex-col items-center gap-4 w-full">
+                <button id="btn-reveal-winner" class="px-10 py-5 rounded-2xl font-black text-xl md:text-2xl text-slate-900 bg-yellow-400 hover:bg-yellow-300 shadow-[0_0_50px_rgba(250,204,21,0.5)] transform hover:scale-110 transition-all flex items-center justify-center gap-3 z-50">
+                    <i class="ph-fill ph-trophy"></i> TAMPILKAN KETUA & WAKIL KETUA 2026-2027
+                </button>
+                
+                <button id="btn-goto-detail" class="hidden px-8 py-4 rounded-xl font-bold text-lg text-white bg-blue-600 hover:bg-blue-500 shadow-xl transition-all items-center gap-2 zoom-in mt-4">
+                    <i class="ph-bold ph-chart-pie-slice"></i> LIHAT DETAIL PER KELAS
+                </button>
+            </div>
+        </section>
+
+        <!-- VIEW: REKAPITULASI DETAIL (PIE CHART) -->
+        <section id="view-detail-rekap" class="view-section flex-col items-center w-full max-w-7xl slide-up h-[85vh]">
+            <div class="w-full flex flex-col sm:flex-row justify-between items-center mb-6 gap-4">
+                <h2 class="text-2xl md:text-3xl font-black text-white uppercase tracking-wider text-center">Rekap Detail & Klasifikasi</h2>
+                <button id="btn-back-to-reveal" class="px-5 py-2.5 bg-slate-700 hover:bg-slate-600 rounded-xl font-bold text-white transition-colors flex items-center gap-2 w-full sm:w-auto justify-center">
+                    <i class="ph-bold ph-arrow-left"></i> Kembali
+                </button>
+            </div>
+            
+            <div class="flex flex-col md:flex-row w-full h-full bg-slate-800 rounded-3xl overflow-hidden shadow-2xl border border-slate-700">
+                <!-- Sidebar Navigasi Kelas -->
+                <div id="sidebar-classes" class="w-full md:w-1/4 lg:w-1/5 bg-slate-900 overflow-y-auto p-4 border-r border-slate-700 flex flex-col gap-2 custom-scrollbar max-h-[40vh] md:max-h-full">
+                    <!-- Tombol Klasifikasi Diinjeksi Disini -->
+                </div>
+                
+                <!-- Area Tengah Chart -->
+                <div class="w-full md:w-3/4 lg:w-4/5 p-6 md:p-8 flex flex-col items-center relative overflow-y-auto custom-scrollbar">
+                    <h3 id="chart-title" class="text-2xl font-bold text-blue-400 mb-2 uppercase tracking-widest text-center">AKUMULASI TOTAL</h3>
+                    <p id="chart-subtitle" class="text-slate-400 font-medium mb-8 text-center text-sm">Menampilkan data...</p>
+                    
+                    <div class="w-full max-w-lg aspect-square relative flex items-center justify-center">
+                        <canvas id="rekapChart"></canvas>
+                    </div>
+                </div>
+            </div>
         </section>
     </main>
 
@@ -198,7 +235,6 @@
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
         import { getFirestore, doc, getDoc, collection, getDocs } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-firestore.js";
 
-        // Konfigurasi Default Firebase
         const firebaseConfig = {
           apiKey: "AIzaSyCzeg9t7CjeoxNB9DaNK10NsHixk0LC9UA",
           authDomain: "e-voting-6f923.firebaseapp.com",
@@ -215,9 +251,9 @@
 
         // --- DATA KANDIDAT ---
         const KANDIDAT = [
-            { id: 1, nama: "Muhammad Novan A. & Salsabila Ohana A.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon1.jpg" },
-            { id: 2, nama: "Fazzriel Yokaka C. & Alzena Kayla N.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon2.jpg" },
-            { id: 3, nama: "Bunga Asshyfa H. & Habel Gibbor C.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon3.jpg" }
+            { id: 1, nama: "Muhammad Novan A. & Salsabila Ohana A.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon1.jpg", color: "#facc15" },
+            { id: 2, nama: "Fazzriel Yokaka C. & Alzena Kayla N.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon2.jpg", color: "#3b82f6" },
+            { id: 3, nama: "Bunga Asshyfa H. & Habel Gibbor C.", img: "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/paslon3.jpg", color: "#10b981" }
         ];
 
         // State Data
@@ -225,12 +261,14 @@
         let totalVotesCast = 0;
         let isSuspenseActive = false;
         let rollingInterval = null;
+        let detailChartData = {}; // Data terstruktur untuk Pie Chart
 
         // DOM Elements
         const views = {
             login: document.getElementById('view-login'),
             dashboard: document.getElementById('view-dashboard'),
-            reveal: document.getElementById('view-reveal')
+            reveal: document.getElementById('view-reveal'),
+            detail: document.getElementById('view-detail-rekap')
         };
         const modal = {
             container: document.getElementById('custom-modal'),
@@ -239,29 +277,27 @@
             btnOk: document.getElementById('modal-btn-ok')
         };
 
-        const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3";
-        const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3";
+        // --- SISTEM SUARA (AUDIO EKSTERNAL DARI GITHUB) ---
+        const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3"; 
+        const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3"; 
 
         const suspenseAudio = new Audio(urlSuspense);
-        suspenseAudio.loop = true;
-        suspenseAudio.preload = 'auto'; // Persiapkan file lebih awal
+        suspenseAudio.loop = true; 
 
         const celebrationAudio = new Audio(urlCelebration);
-        celebrationAudio.preload = 'auto'; // Persiapkan file lebih awal
 
         function playSuspenseSound() {
-            suspenseAudio.play().catch(err => console.warn("Browser memblokir autoplay audio:", err));
+            suspenseAudio.play().catch(e => console.warn("Audio autoplay blocked", e));
         }
-
         function stopSuspenseSound() {
             suspenseAudio.pause();
             suspenseAudio.currentTime = 0;
         }
-
         function playCelebrationSound() {
-            celebrationAudio.play().catch(err => console.warn("Browser memblokir autoplay audio:", err));
+            celebrationAudio.play().catch(e => console.warn("Audio autoplay blocked", e));
         }
 
+        // --- FUNGSI UTILITIES ---
         function switchView(viewName) {
             Object.values(views).forEach(v => v.classList.remove('active'));
             views[viewName].classList.add('active');
@@ -279,7 +315,7 @@
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // PAKSA PRELOAD AUDIO SAAT USER KLIK TOMBOL (Sesuai Aturan Autoplay Browser)
+            // PRELOAD AUDIO PADA SAAT INTERAKSI PERTAMA (Mematuhi Aturan Browser)
             suspenseAudio.load();
             celebrationAudio.load();
 
@@ -290,7 +326,6 @@
             btn.disabled = true;
 
             try {
-                // Bypass khusus simulasi pengembangan (Bisa dihapus di production)
                 if (inputId.toLowerCase() === 'admin') {
                     document.getElementById('admin-badge').classList.remove('hidden');
                     document.getElementById('admin-badge').classList.add('flex');
@@ -299,7 +334,6 @@
                     return;
                 }
 
-                // Cek Role di Firestore
                 const pemilihRef = doc(db, 'artifacts', appId, 'public', 'data', 'voters_list', inputId);
                 const snap = await getDoc(pemilihRef);
 
@@ -322,32 +356,68 @@
 
         async function fetchDashboardData() {
             try {
-                // 1. Ambil semua suara
-                const votesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'votes'));
-                totalVotesCast = votesSnap.size;
-                
-                // Hitung Tally
-                votesSnap.forEach(doc => {
-                    const candidateId = doc.data().candidateId;
-                    if(globalTally[candidateId] !== undefined) globalTally[candidateId]++;
-                });
+                globalTally = { 1: 0, 2: 0, 3: 0 };
+                detailChartData = {
+                    "Akumulasi Total": { total: 0, used: 0, unused: 0, 1: 0, 2: 0, 3: 0 }
+                };
 
-                // 2. Ambil total pemilih terdaftar
+                // 1. Ambil & Susun Data Daftar Pemilih (voters_list)
                 const votersSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'voters_list'));
                 const totalTerdaftar = votersSnap.size;
-                const totalSisa = totalTerdaftar - totalVotesCast;
 
-                // Tampilkan di UI
+                votersSnap.forEach(doc => {
+                    const data = doc.data();
+                    let kategori = data.kelas || data.role || "Umum";
+                    if (data.role === 'Guru' || data.role === 'Staf' || data.role === 'Panitia' || data.role === 'Admin') kategori = "Guru/Staf";
+
+                    if (!detailChartData[kategori]) detailChartData[kategori] = { total: 0, used: 0, unused: 0, 1: 0, 2: 0, 3: 0 };
+                    
+                    detailChartData[kategori].total++;
+                    detailChartData[kategori].unused++; // Awalnya anggap belum memilih
+                    
+                    detailChartData["Akumulasi Total"].total++;
+                    detailChartData["Akumulasi Total"].unused++;
+                });
+
+                // 2. Ambil & Susun Data Suara Masuk (votes)
+                const votesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'votes'));
+                totalVotesCast = votesSnap.size;
+                const totalSisa = totalTerdaftar - totalVotesCast;
+                
+                votesSnap.forEach(doc => {
+                    const data = doc.data();
+                    const paslon = data.candidateId;
+                    
+                    // Hitung Global
+                    if(globalTally[paslon] !== undefined) globalTally[paslon]++;
+                    detailChartData["Akumulasi Total"][paslon]++;
+                    detailChartData["Akumulasi Total"].used++;
+                    detailChartData["Akumulasi Total"].unused = Math.max(0, detailChartData["Akumulasi Total"].total - detailChartData["Akumulasi Total"].used);
+
+                    // Hitung Per Kategori (Hanya berfungsi bila pada saat voting, 'kelas' ikut disimpan)
+                    let kategori = data.kelas || data.role || "Umum";
+                    if (data.role === 'Guru' || data.role === 'Staf' || data.role === 'Panitia' || data.role === 'Admin') kategori = "Guru/Staf";
+
+                    if(detailChartData[kategori]) {
+                        detailChartData[kategori][paslon]++;
+                        detailChartData[kategori].used++;
+                        detailChartData[kategori].unused = Math.max(0, detailChartData[kategori].total - detailChartData[kategori].used);
+                    }
+                });
+
+                // Tampilkan di UI Statistik Utama
                 document.getElementById('stat-terdaftar').textContent = totalTerdaftar || '0';
                 document.getElementById('stat-masuk').textContent = totalVotesCast;
                 document.getElementById('stat-sisa').textContent = totalSisa > 0 ? totalSisa : '0';
 
-                // Ubah State UI
                 document.getElementById('stats-loading').classList.add('hidden');
                 document.getElementById('stats-content').classList.remove('hidden');
                 document.getElementById('stats-content').classList.add('flex');
 
+                buildDetailSidebar(); // Siapkan tombol navigasi untuk menu Rekap Detail
+
             } catch (err) {
+                console.error(err);
                 showError('Gagal Sinkronisasi', 'Tidak dapat menarik data rekapitulasi. Pastikan koneksi stabil.');
             }
         }
@@ -362,28 +432,27 @@
             container.innerHTML = '';
 
             KANDIDAT.forEach(k => {
-                // Elemen Wrapper Fleksibel
                 const wrapper = document.createElement('div');
                 wrapper.id = `wrapper-${k.id}`;
+                // Layout Awal: 3 Berjajar secara flex-wrap
                 wrapper.className = "w-full md:w-[31%] flex justify-center transition-all duration-1000 ease-in-out";
 
-                // Elemen Kartu
                 const card = document.createElement('div');
                 card.id = `candidate-card-${k.id}`;
-                card.className = "w-full max-w-sm bg-slate-800 border-2 border-slate-700 rounded-3xl overflow-hidden shadow-2xl relative transition-all duration-700 flex flex-col";
+                card.className = "w-full bg-slate-800 border-2 border-slate-700 rounded-3xl overflow-hidden shadow-2xl relative transition-all duration-700 flex flex-col items-center justify-center";
                 
                 card.innerHTML = `
-                    <div class="relative h-72 bg-slate-900 overflow-hidden">
+                    <div id="img-container-${k.id}" class="relative w-full h-72 bg-slate-900 overflow-hidden transition-all duration-700 flex items-center justify-center">
                         <img src="${k.img}" alt="Paslon ${k.id}" id="img-${k.id}" class="candidate-img w-full h-full object-cover grayscale-[100%] opacity-80" onerror="this.src='https://placehold.co/400x400/1e293b/ffffff?text=Paslon+${k.id}'"/>
-                        <div class="absolute top-4 left-4 bg-slate-900 text-slate-300 w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shadow-lg border-2 border-slate-700 id-badge transition-colors duration-700">
+                        <div class="absolute top-4 left-4 bg-slate-900 text-slate-300 w-12 h-12 rounded-full flex items-center justify-center text-xl font-black shadow-lg border-2 border-slate-700 id-badge transition-colors duration-700 z-10">
                             ${k.id}
                         </div>
                     </div>
-                    <div class="p-6 text-center flex-grow flex flex-col justify-between">
-                        <h3 class="text-lg font-bold text-slate-300 mb-6">${k.nama}</h3>
+                    <div id="text-container-${k.id}" class="p-6 text-center flex-grow flex flex-col justify-center w-full transition-all duration-700">
+                        <h3 class="text-lg font-bold text-slate-300 mb-4 px-2 leading-tight">${k.nama}</h3>
                         <div>
-                            <p class="text-slate-500 text-sm font-semibold uppercase tracking-widest mb-2">Perolehan Suara</p>
-                            <div class="text-6xl font-black text-white digital-font" id="digit-${k.id}">000</div>
+                            <p class="text-slate-500 text-sm font-semibold uppercase tracking-widest mb-1">Perolehan Suara</p>
+                            <div class="text-6xl font-black text-white digital-font transition-all duration-700" id="digit-${k.id}">000</div>
                         </div>
                     </div>
                 `;
@@ -392,20 +461,201 @@
                 container.appendChild(wrapper);
             });
 
-            // Mulai Efek Menegangkan & Putar Audio
             isSuspenseActive = true;
             playSuspenseSound();
 
-            // Mulai Animasi Angka Acak
             rollingInterval = setInterval(() => {
                 KANDIDAT.forEach(k => {
                     const el = document.getElementById(`digit-${k.id}`);
-                    el.textContent = Math.floor(Math.random() * (totalVotesCast + 500)).toString().padStart(3, '0');
+                    el.textContent = Math.floor(Math.random() * (totalVotesCast + 999)).toString().padStart(3, '0');
                 });
             }, 50);
         }
 
-        // --- SISTEM CONFETTI (CANVAS) ---
+        document.getElementById('btn-reveal-winner').addEventListener('click', () => {
+            if (!isSuspenseActive) return;
+            
+            isSuspenseActive = false;
+            clearInterval(rollingInterval);
+            
+            stopSuspenseSound();
+            playCelebrationSound();
+
+            document.getElementById('btn-reveal-winner').classList.add('hidden');
+            document.getElementById('reveal-title').textContent = "SELAMAT KEPADA KETUA & WAKIL KETUA BARU!";
+            document.getElementById('reveal-title').classList.add('text-yellow-400', 'animate-pulse');
+            
+            // Munculkan tombol fitur Chart Detail
+            document.getElementById('btn-goto-detail').classList.remove('hidden');
+            document.getElementById('btn-goto-detail').classList.add('flex');
+
+            // Hitung Siapa Pemenangnya
+            let maxVotes = -1;
+            let winnerId = null;
+            Object.keys(globalTally).forEach(id => {
+                if(globalTally[id] > maxVotes) {
+                    maxVotes = globalTally[id];
+                    winnerId = parseInt(id);
+                }
+            });
+
+            // Ubah UI Secara Dramatis
+            KANDIDAT.forEach(k => {
+                const wrapper = document.getElementById(`wrapper-${k.id}`);
+                const card = document.getElementById(`candidate-card-${k.id}`);
+                const imgContainer = document.getElementById(`img-container-${k.id}`);
+                const img = document.getElementById(`img-${k.id}`);
+                const digit = document.getElementById(`digit-${k.id}`);
+                
+                // Tetapkan skor asli
+                digit.textContent = globalTally[k.id].toString();
+                
+                if (k.id === winnerId) {
+                    // PEMENANG: Naik Ke Atas (order-1), Memakan Baris Penuh
+                    wrapper.classList.remove('md:w-[31%]');
+                    wrapper.classList.add('w-full', 'md:w-full', 'order-1', 'z-20', 'mb-6');
+
+                    // Desain Kartu Membesar, Menyala
+                    card.classList.remove('bg-slate-800', 'border-slate-700');
+                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow', 'max-w-xl'); // Max-w-xl agar sangat lebar & dominan
+                    card.style.transform = "scale(1.08) translateY(-5px)";
+                    
+                    // Modifikasi Foto: Tidak Boleh Terpotong (object-contain), Beri Bingkai Background Hitam
+                    imgContainer.classList.remove('h-72');
+                    imgContainer.classList.add('h-96', 'bg-slate-950', 'p-4', 'rounded-t-3xl'); // Frame tinggi
+                    img.classList.remove('grayscale-[100%]', 'opacity-80', 'object-cover');
+                    img.classList.add('grayscale-0', 'opacity-100', 'object-contain', 'rounded-xl'); // Full utuh
+
+                    // Teks Berubah Emas & Lebih Besar
+                    digit.classList.remove('text-white');
+                    digit.classList.add('text-yellow-400', 'text-7xl');
+                    
+                    const badge = card.querySelector('.id-badge');
+                    badge.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
+                    badge.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
+                    
+                } else {
+                    // YANG KALAH: Turun ke Bawah (order-2), Berdampingan
+                    wrapper.classList.remove('md:w-[31%]', 'w-full');
+                    wrapper.classList.add('w-1/2', 'md:w-[45%]', 'order-2', 'z-10');
+
+                    // Desain Kartu Mengecil, Memudar
+                    card.classList.remove('max-w-sm');
+                    card.classList.add('max-w-xs');
+                    card.style.opacity = "0.6"; // Sedikit redup
+                    card.style.transform = "scale(0.9) translateY(15px)";
+                    
+                    // Gambar tetap object-cover namun grayscale
+                }
+            });
+
+            // Mulai Animasi Confetti
+            canvas.classList.remove('hidden');
+            createConfetti();
+            drawConfetti();
+        });
+
+        let rekapChartInstance = null;
+
+        document.getElementById('btn-goto-detail').addEventListener('click', () => {
+            switchView('detail');
+            updatePieChart("Akumulasi Total");
+        });
+
+        document.getElementById('btn-back-to-reveal').addEventListener('click', () => {
+            switchView('reveal');
+        });
+
+        function buildDetailSidebar() {
+            const sidebar = document.getElementById('sidebar-classes');
+            sidebar.innerHTML = '';
+
+            // Filter dan Urutkan Kategori (Guru di atas, lalu Kelas secara alfabet)
+            let rawCategories = Object.keys(detailChartData).filter(c => c !== 'Akumulasi Total' && c !== 'Guru/Staf' && c !== 'Umum');
+            rawCategories.sort();
+            
+            let sortedCategories = ['Akumulasi Total'];
+            if(detailChartData['Guru/Staf']) sortedCategories.push('Guru/Staf');
+            sortedCategories = sortedCategories.concat(rawCategories);
+            if(detailChartData['Umum']) sortedCategories.push('Umum');
+
+            sortedCategories.forEach((cat, index) => {
+                const btn = document.createElement('button');
+                btn.className = "w-full text-left px-4 py-3 rounded-lg font-bold text-sm transition-all border outline-none truncate " + 
+                    (index === 0 ? "bg-blue-600 text-white border-blue-500 shadow-md sidebar-btn-active" : "bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white sidebar-btn");
+                btn.textContent = cat;
+                
+                btn.addEventListener('click', () => {
+                    // Reset styling semua tombol
+                    document.querySelectorAll('.sidebar-btn, .sidebar-btn-active').forEach(b => {
+                        b.className = "w-full text-left px-4 py-3 rounded-lg font-bold text-sm transition-all border outline-none truncate bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white sidebar-btn";
+                    });
+                    // Aktifkan tombol yang diklik
+                    btn.className = "w-full text-left px-4 py-3 rounded-lg font-bold text-sm transition-all border outline-none truncate bg-blue-600 text-white border-blue-500 shadow-md sidebar-btn-active";
+                    
+                    updatePieChart(cat);
+                });
+                sidebar.appendChild(btn);
+            });
+        }
+
+        function updatePieChart(kategori) {
+            const ctx = document.getElementById('rekapChart').getContext('2d');
+            const dataKat = detailChartData[kategori];
+
+            document.getElementById('chart-title').textContent = kategori.toUpperCase();
+            document.getElementById('chart-subtitle').textContent = `Total Terdaftar: ${dataKat.total} Orang | Suara Masuk: ${dataKat.used}`;
+
+            const chartData = {
+                labels: ['Paslon 1', 'Paslon 2', 'Paslon 3', 'Golput / Belum Memilih'],
+                datasets: [{
+                    data: [dataKat[1], dataKat[2], dataKat[3], dataKat.unused],
+                    backgroundColor: ['#facc15', '#3b82f6', '#10b981', '#ef4444'], // Emas, Biru, Hijau, Merah
+                    borderWidth: 2,
+                    borderColor: '#1e293b',
+                    hoverOffset: 12
+                }]
+            };
+
+            if (rekapChartInstance) {
+                rekapChartInstance.data = chartData;
+                rekapChartInstance.update();
+            } else {
+                rekapChartInstance = new Chart(ctx, {
+                    type: 'pie',
+                    data: chartData,
+                    options: {
+                        responsive: true,
+                        maintainAspectRatio: false,
+                        plugins: {
+                            legend: {
+                                position: 'bottom',
+                                labels: { color: '#cbd5e1', font: { family: 'Inter', size: 14, weight: '500' }, padding: 20 }
+                            },
+                            tooltip: {
+                                backgroundColor: 'rgba(15, 23, 42, 0.9)',
+                                titleFont: { size: 14, family: 'Inter' },
+                                bodyFont: { size: 16, weight: 'bold', family: 'Inter' },
+                                padding: 12,
+                                cornerRadius: 8,
+                                callbacks: {
+                                    label: function(context) {
+                                        const label = context.label || '';
+                                        const value = context.raw || 0;
+                                        const dataset = context.chart.data.datasets[0];
+                                        const totalData = dataset.data.reduce((a, b) => a + b, 0);
+                                        const percentage = totalData > 0 ? ((value / totalData) * 100).toFixed(1) + '%' : '0%';
+                                        
+                                        return ` ${label} : ${value} Suara (${percentage})`;
+                                    }
+                                }
+                            }
+                        }
+                    }
+                });
+            }
+        }
+
         const canvas = document.getElementById('confetti-canvas');
         const ctx = canvas.getContext('2d');
         canvas.width = window.innerWidth;
@@ -449,8 +699,6 @@
             confettiParticles = results;
             if (confettiParticles.length > 0) {
                 requestAnimationFrame(drawConfetti);
-            } else {
-                canvas.classList.add('hidden');
             }
         }
 
@@ -459,85 +707,6 @@
             canvas.height = window.innerHeight;
         });
 
-        document.getElementById('btn-reveal-winner').addEventListener('click', () => {
-            if (!isSuspenseActive) return;
-            
-            // Hentikan Efek Menegangkan
-            isSuspenseActive = false;
-            clearInterval(rollingInterval);
-            
-            // Ganti Audio ke Perayaan
-            stopSuspenseSound();
-            playCelebrationSound();
-
-            // Sembunyikan Tombol Reveal, Ubah Judul
-            document.getElementById('btn-reveal-winner').classList.add('hidden');
-            document.getElementById('reveal-title').textContent = "SELAMAT KEPADA KETUA & WAKIL KETUA BARU!";
-            document.getElementById('reveal-title').classList.add('text-yellow-400', 'animate-pulse');
-
-            // Cari Pemenang
-            let maxVotes = -1;
-            let winnerId = null;
-            Object.keys(globalTally).forEach(id => {
-                if(globalTally[id] > maxVotes) {
-                    maxVotes = globalTally[id];
-                    winnerId = parseInt(id);
-                }
-            });
-
-            // Update UI Tiap Kandidat (Dengan Efek Perubahan Layout)
-            KANDIDAT.forEach(k => {
-                const wrapper = document.getElementById(`wrapper-${k.id}`);
-                const card = document.getElementById(`candidate-card-${k.id}`);
-                const img = document.getElementById(`img-${k.id}`);
-                const digit = document.getElementById(`digit-${k.id}`);
-                
-                // Set Angka Suara Asli
-                digit.textContent = globalTally[k.id].toString();
-                
-                // Cek Apakah Pemenang
-                if (k.id === winnerId) {
-                    // Layout Wrapper Pemenang (Memaksa memakan baris penuh, pindah ke Atas)
-                    wrapper.classList.remove('md:w-[31%]');
-                    wrapper.classList.add('w-full', 'md:w-full', 'order-1', 'z-20', 'mb-8');
-
-                    // Styling Card Pemenang (Membesar)
-                    card.classList.remove('bg-slate-800', 'border-slate-700', 'max-w-sm');
-                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow', 'max-w-lg');
-                    card.style.transform = "scale(1.15) translateY(-10px)";
-                    
-                    // Ubah Gambar jadi Berwarna (HANYA PEMENANG)
-                    img.classList.remove('grayscale-[100%]', 'opacity-80');
-                    img.classList.add('grayscale-0', 'opacity-100');
-
-                    // Ubah Warna Teks dan Badge Emas
-                    digit.classList.remove('text-white');
-                    digit.classList.add('text-yellow-400');
-                    
-                    const badge = card.querySelector('.id-badge');
-                    badge.classList.remove('bg-slate-900', 'text-slate-300', 'border-slate-700');
-                    badge.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
-                    
-                } else {
-                    // Jika Kalah (Biarkan Tetap Hitam Putih / Grayscale)
-                    
-                    // Layout Wrapper Kalah (Berbagi tempat di baris kedua, Turun ke Bawah)
-                    wrapper.classList.remove('md:w-[31%]', 'w-full');
-                    wrapper.classList.add('w-1/2', 'md:w-[40%]', 'order-2', 'z-10');
-
-                    // Styling Card Kalah (Mengecil & Transparan)
-                    card.classList.remove('max-w-sm');
-                    card.classList.add('max-w-xs');
-                    card.style.opacity = "0.5";
-                    card.style.transform = "scale(0.9) translateY(20px)";
-                }
-            });
-
-            // Mulai Confetti
-            canvas.classList.remove('hidden');
-            createConfetti();
-            drawConfetti();
-        });
     </script>
 </body>
 </html>
