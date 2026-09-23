@@ -230,6 +230,16 @@
         </div>
     </div>
 
+    <!-- KIOSK OVERLAY (LAYAR PENUH PAKSA) -->
+    <div id="kiosk-overlay" class="fixed inset-0 z-[100] bg-slate-900 flex flex-col items-center justify-center text-white hidden">
+        <i class="ph-fill ph-warning-octagon text-7xl text-red-500 mb-6 animate-pulse"></i>
+        <h2 class="text-3xl font-extrabold mb-2 text-center">MODE LAYAR PENUH TERKUNCI</h2>
+        <p class="text-lg text-slate-300 mb-8 text-center px-4">Aplikasi Dasbor Admin ini harus dijalankan dalam layar penuh demi kelancaran animasi.<br>Silakan klik tombol di bawah untuk kembali ke layar penuh.</p>
+        <button id="btn-resume-kiosk" class="px-8 py-4 bg-blue-600 hover:bg-blue-700 text-white font-bold rounded-xl shadow-[0_0_20px_rgba(37,99,235,0.5)] transition-all flex items-center gap-3 text-lg">
+            <i class="ph-bold ph-corners-out text-2xl"></i> Kembali ke Layar Penuh
+        </button>
+    </div>
+
     <script type="module">
         import { initializeApp } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-app.js";
         import { getAuth, signInAnonymously } from "https://www.gstatic.com/firebasejs/11.6.1/firebase-auth.js";
@@ -261,7 +271,7 @@
         let totalVotesCast = 0;
         let isSuspenseActive = false;
         let rollingInterval = null;
-        let detailChartData = {}; // Data terstruktur untuk Pie Chart
+        let detailChartData = {}; 
 
         // DOM Elements
         const views = {
@@ -277,7 +287,38 @@
             btnOk: document.getElementById('modal-btn-ok')
         };
 
-        // --- SISTEM SUARA (AUDIO EKSTERNAL DARI GITHUB) ---
+        // --- AUTO FULLSCREEN (STRICT KIOSK MODE) ---
+        let hasStartedKiosk = false;
+        const kioskOverlay = document.getElementById('kiosk-overlay');
+        const btnResumeKiosk = document.getElementById('btn-resume-kiosk');
+
+        function enforceFullscreen() {
+            if (!document.fullscreenElement) {
+                document.documentElement.requestFullscreen().then(() => {
+                    hasStartedKiosk = true;
+                    kioskOverlay.classList.add('hidden');
+                }).catch(err => {
+                    // Abaikan pesan error sebelum ada interaksi valid dari user
+                });
+            }
+        }
+        
+        ['click', 'touchstart', 'keydown'].forEach(evt => {
+            document.addEventListener(evt, enforceFullscreen, { passive: true });
+        });
+
+        document.addEventListener('fullscreenchange', () => {
+            if (!document.fullscreenElement && hasStartedKiosk) {
+                kioskOverlay.classList.remove('hidden');
+            } else if (document.fullscreenElement) {
+                kioskOverlay.classList.add('hidden');
+                hasStartedKiosk = true;
+            }
+        });
+
+        btnResumeKiosk.addEventListener('click', enforceFullscreen);
+
+        // --- SISTEM SUARA ---
         const urlSuspense = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/suspense.mp3"; 
         const urlCelebration = "https://raw.githubusercontent.com/Wahyudi-1/EvotingSMAN1Ngawi/main/celebration.mp3"; 
 
@@ -315,7 +356,6 @@
         document.getElementById('form-login').addEventListener('submit', async (e) => {
             e.preventDefault();
             
-            // PRELOAD AUDIO PADA SAAT INTERAKSI PERTAMA (Mematuhi Aturan Browser)
             suspenseAudio.load();
             celebrationAudio.load();
 
@@ -361,7 +401,6 @@
                     "Akumulasi Total": { total: 0, used: 0, unused: 0, 1: 0, 2: 0, 3: 0 }
                 };
 
-                // 1. Ambil & Susun Data Daftar Pemilih (voters_list)
                 const votersSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'voters_list'));
                 const totalTerdaftar = votersSnap.size;
 
@@ -373,13 +412,12 @@
                     if (!detailChartData[kategori]) detailChartData[kategori] = { total: 0, used: 0, unused: 0, 1: 0, 2: 0, 3: 0 };
                     
                     detailChartData[kategori].total++;
-                    detailChartData[kategori].unused++; // Awalnya anggap belum memilih
+                    detailChartData[kategori].unused++; 
                     
                     detailChartData["Akumulasi Total"].total++;
                     detailChartData["Akumulasi Total"].unused++;
                 });
 
-                // 2. Ambil & Susun Data Suara Masuk (votes)
                 const votesSnap = await getDocs(collection(db, 'artifacts', appId, 'public', 'data', 'votes'));
                 totalVotesCast = votesSnap.size;
                 const totalSisa = totalTerdaftar - totalVotesCast;
@@ -388,13 +426,11 @@
                     const data = doc.data();
                     const paslon = data.candidateId;
                     
-                    // Hitung Global
                     if(globalTally[paslon] !== undefined) globalTally[paslon]++;
                     detailChartData["Akumulasi Total"][paslon]++;
                     detailChartData["Akumulasi Total"].used++;
                     detailChartData["Akumulasi Total"].unused = Math.max(0, detailChartData["Akumulasi Total"].total - detailChartData["Akumulasi Total"].used);
 
-                    // Hitung Per Kategori (Hanya berfungsi bila pada saat voting, 'kelas' ikut disimpan)
                     let kategori = data.kelas || data.role || "Umum";
                     if (data.role === 'Guru' || data.role === 'Staf' || data.role === 'Panitia' || data.role === 'Admin') kategori = "Guru/Staf";
 
@@ -405,7 +441,6 @@
                     }
                 });
 
-                // Tampilkan di UI Statistik Utama
                 document.getElementById('stat-terdaftar').textContent = totalTerdaftar || '0';
                 document.getElementById('stat-masuk').textContent = totalVotesCast;
                 document.getElementById('stat-sisa').textContent = totalSisa > 0 ? totalSisa : '0';
@@ -414,7 +449,7 @@
                 document.getElementById('stats-content').classList.remove('hidden');
                 document.getElementById('stats-content').classList.add('flex');
 
-                buildDetailSidebar(); // Siapkan tombol navigasi untuk menu Rekap Detail
+                buildDetailSidebar(); 
 
             } catch (err) {
                 console.error(err);
@@ -434,7 +469,6 @@
             KANDIDAT.forEach(k => {
                 const wrapper = document.createElement('div');
                 wrapper.id = `wrapper-${k.id}`;
-                // Layout Awal: 3 Berjajar secara flex-wrap
                 wrapper.className = "w-full md:w-[31%] flex justify-center transition-all duration-1000 ease-in-out";
 
                 const card = document.createElement('div');
@@ -485,11 +519,9 @@
             document.getElementById('reveal-title').textContent = "SELAMAT KEPADA KETUA & WAKIL KETUA BARU!";
             document.getElementById('reveal-title').classList.add('text-yellow-400', 'animate-pulse');
             
-            // Munculkan tombol fitur Chart Detail
             document.getElementById('btn-goto-detail').classList.remove('hidden');
             document.getElementById('btn-goto-detail').classList.add('flex');
 
-            // Hitung Siapa Pemenangnya
             let maxVotes = -1;
             let winnerId = null;
             Object.keys(globalTally).forEach(id => {
@@ -499,7 +531,6 @@
                 }
             });
 
-            // Ubah UI Secara Dramatis
             KANDIDAT.forEach(k => {
                 const wrapper = document.getElementById(`wrapper-${k.id}`);
                 const card = document.getElementById(`candidate-card-${k.id}`);
@@ -507,26 +538,21 @@
                 const img = document.getElementById(`img-${k.id}`);
                 const digit = document.getElementById(`digit-${k.id}`);
                 
-                // Tetapkan skor asli
                 digit.textContent = globalTally[k.id].toString();
                 
                 if (k.id === winnerId) {
-                    // PEMENANG: Naik Ke Atas (order-1), Memakan Baris Penuh
                     wrapper.classList.remove('md:w-[31%]');
                     wrapper.classList.add('w-full', 'md:w-full', 'order-1', 'z-20', 'mb-6');
 
-                    // Desain Kartu Membesar, Menyala
                     card.classList.remove('bg-slate-800', 'border-slate-700');
-                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow', 'max-w-xl'); // Max-w-xl agar sangat lebar & dominan
+                    card.classList.add('bg-slate-800', 'border-yellow-400', 'pulse-glow', 'max-w-xl'); 
                     card.style.transform = "scale(1.08) translateY(-5px)";
                     
-                    // Modifikasi Foto: Tidak Boleh Terpotong (object-contain), Beri Bingkai Background Hitam
                     imgContainer.classList.remove('h-72');
-                    imgContainer.classList.add('h-96', 'bg-slate-950', 'p-4', 'rounded-t-3xl'); // Frame tinggi
+                    imgContainer.classList.add('h-96', 'bg-slate-950', 'p-4', 'rounded-t-3xl'); 
                     img.classList.remove('grayscale-[100%]', 'opacity-80', 'object-cover');
-                    img.classList.add('grayscale-0', 'opacity-100', 'object-contain', 'rounded-xl'); // Full utuh
+                    img.classList.add('grayscale-0', 'opacity-100', 'object-contain', 'rounded-xl'); 
 
-                    // Teks Berubah Emas & Lebih Besar
                     digit.classList.remove('text-white');
                     digit.classList.add('text-yellow-400', 'text-7xl');
                     
@@ -535,21 +561,16 @@
                     badge.classList.add('bg-yellow-400', 'text-slate-900', 'border-yellow-200');
                     
                 } else {
-                    // YANG KALAH: Turun ke Bawah (order-2), Berdampingan
                     wrapper.classList.remove('md:w-[31%]', 'w-full');
                     wrapper.classList.add('w-1/2', 'md:w-[45%]', 'order-2', 'z-10');
 
-                    // Desain Kartu Mengecil, Memudar
                     card.classList.remove('max-w-sm');
                     card.classList.add('max-w-xs');
-                    card.style.opacity = "0.6"; // Sedikit redup
+                    card.style.opacity = "0.6"; 
                     card.style.transform = "scale(0.9) translateY(15px)";
-                    
-                    // Gambar tetap object-cover namun grayscale
                 }
             });
 
-            // Mulai Animasi Confetti
             canvas.classList.remove('hidden');
             createConfetti();
             drawConfetti();
@@ -570,7 +591,6 @@
             const sidebar = document.getElementById('sidebar-classes');
             sidebar.innerHTML = '';
 
-            // Filter dan Urutkan Kategori (Guru di atas, lalu Kelas secara alfabet)
             let rawCategories = Object.keys(detailChartData).filter(c => c !== 'Akumulasi Total' && c !== 'Guru/Staf' && c !== 'Umum');
             rawCategories.sort();
             
@@ -586,11 +606,9 @@
                 btn.textContent = cat;
                 
                 btn.addEventListener('click', () => {
-                    // Reset styling semua tombol
                     document.querySelectorAll('.sidebar-btn, .sidebar-btn-active').forEach(b => {
                         b.className = "w-full text-left px-4 py-3 rounded-lg font-bold text-sm transition-all border outline-none truncate bg-slate-800 text-slate-400 border-slate-700 hover:bg-slate-700 hover:text-white sidebar-btn";
                     });
-                    // Aktifkan tombol yang diklik
                     btn.className = "w-full text-left px-4 py-3 rounded-lg font-bold text-sm transition-all border outline-none truncate bg-blue-600 text-white border-blue-500 shadow-md sidebar-btn-active";
                     
                     updatePieChart(cat);
@@ -610,7 +628,7 @@
                 labels: ['Paslon 1', 'Paslon 2', 'Paslon 3', 'Golput / Belum Memilih'],
                 datasets: [{
                     data: [dataKat[1], dataKat[2], dataKat[3], dataKat.unused],
-                    backgroundColor: ['#facc15', '#3b82f6', '#10b981', '#ef4444'], // Emas, Biru, Hijau, Merah
+                    backgroundColor: ['#facc15', '#3b82f6', '#10b981', '#ef4444'], 
                     borderWidth: 2,
                     borderColor: '#1e293b',
                     hoverOffset: 12
